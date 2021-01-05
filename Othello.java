@@ -124,7 +124,7 @@ public class Othello {
             for (int i = y; i >= 0; i--) {
                 if (i!=y && board[i][x]==' ') {
                     break;
-                } else if (i!=y && board[i][x] != desiredChar) {
+                } else if (i==(y+1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
                     for (int j = i; j <= y; j++) {
@@ -140,7 +140,7 @@ public class Othello {
             for (int i = y; i < 8; i++) {
                 if (i!=y && board[i][x]==' ') {
                     break;
-                } else if (i!=y && board[i][x] != desiredChar) {
+                } else if (i==(y+1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
                     for (int j = i; j >= y; j--) {
@@ -151,7 +151,7 @@ public class Othello {
                 }
             }
 
-            // Chech left
+            // Check left
 
             // Check right
 
