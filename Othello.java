@@ -34,12 +34,56 @@ public class Othello {
         int player = 1;
         while (finished == false) {
             displayBoard();
+            System.out.println("");
+            displayScore();
+            System.out.println("");
             System.out.println("PLAYER " + player + "'S TURN");
-
-            promptPlayer(player);
+            if (hasPossibleMoves(player)) {
+                promptPlayer(player);
+            } else {
+                System.out.println("Current player does not have any valid possible moves.  Skipping turn...");
+            }
+            // Switch player
+            player = (player % 2) + 1;
+            System.out.println("");
             finished = isGameOver();
         }
+        System.out.println("GAME OVER");
+        int winner = displayScore();
+        if (winner == 1) {
+            System.out.println("Player 1 is the winner!");
+        } else if (winner == 2) {
+            System.out.println("Player 2 is the winner!");
+        } else {
+            System.out.println("The game is a tie!");
+        }
         return;
+    }
+
+    // Display score
+    // Returns an int indicating which player is currently leading
+    // (0 represents the score is tied)
+    public static int displayScore() {
+        int p1Counter = 0;
+        int p2Counter = 0;
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                if (board[y][x] == 'X') {
+                    p1Counter++;
+                } else if (board[y][x] == 'O') {
+                    p1Counter++;
+                }
+            }
+        }
+        System.out.println("Player 1 score: " + p1Counter);
+        System.out.println("Player 2 score: " + p2Counter); 
+        if (p1Counter > p2Counter) {
+            return 1;
+        } else if (p2Counter > p1Counter) {
+            return 2;
+        } else {
+            return 0;
+        }
     }
 
     // Checks if the given user has any possible valid moves
@@ -47,7 +91,7 @@ public class Othello {
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
                 if (board[y][x] != ' ') {
-                    System.out.println("PLACEHOLDER"); //
+                    return true;
                 }
             }
         }
@@ -63,38 +107,65 @@ public class Othello {
             desiredChar = 'O';
         }
 
-        if (board[y][x] != ' ') {
-            return false;
-        }
-
-        /* According to the official rules of the board game:
-        "You may not skip over your own color disk to outflank
-        an opposing disk."
-        As such I will ___________ */
-        boolean madeChanges = false;
-        // Check above
-        for (int i = y; i >= 0; i--) {
-            if (i!=y && board[i][x]==' ') {
-                break;
+        try {
+            if (board[y][x] != ' ') {
+                return false;
             }
-            if (i!=y && board[i][x]==desiredChar) {
-                for (int j = i; j <= y; j++) {
-                    board[j][x] = desiredChar;
+
+            /* According to the official rules of the board game:
+            "You may not skip over your own color disk to outflank
+            an opposing disk."
+            As such I will ___________ */
+
+            boolean madeChanges = false;
+
+            // Check above
+            boolean encounteredOpponent = false;
+            for (int i = y; i >= 0; i--) {
+                if (i!=y && board[i][x]==' ') {
+                    break;
+                } else if (i!=y && board[i][x] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[i][x]==desiredChar && encounteredOpponent) {
+                    for (int j = i; j <= y; j++) {
+                        board[j][x] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
                 }
-                madeChanges = true;
-                break;
             }
-        }
-        // Check below
+            encounteredOpponent = false;
 
-        // Chech left
+            // Check below
+            for (int i = y; i < 8; i++) {
+                if (i!=y && board[i][x]==' ') {
+                    break;
+                } else if (i!=y && board[i][x] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[i][x]==desiredChar && encounteredOpponent) {
+                    for (int j = i; j >= y; j--) {
+                        board[j][x] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
 
-        // Check right
+            // Chech left
 
-        // Check 
-        if (madeChanges) {
-            return true;
-        } else {
+            // Check right
+
+            // Check if a move was performed:
+            if (madeChanges) {
+                return true;
+            } else {
+                return false;
+            }
+        
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            System.out.println("The first value must be a letter from A-F");
+            System.out.println("The second value must be an integer from 1-8");
+            System.out.println("Please try again...");
             return false;
         }
     }
@@ -124,15 +195,11 @@ public class Othello {
 
     public static void promptPlayer(int player) {
         while (true) {
-            // Check if the user has any valid moves
-
             // Get input from the user
             System.out.print("Move? ");
             String userInput = scannerObj.nextLine();
             int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65)
             int y = (Character.getNumericValue(userInput.charAt(1))-8) * -1;
-            System.out.println("x: " + x);
-            System.out.println("y: " + y);
             // Check if move is valid
             if (performMove(player, x, y)) {
                 break;
