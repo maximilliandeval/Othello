@@ -198,6 +198,10 @@ public class Othello {
             // Get input from the user
             System.out.print("Move? ");
             String userInput = scannerObj.nextLine();
+            if (userInput.length() != 2) {
+                System.out.println("Your input must have a length of 2");
+                continue;
+            }
             int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65)
             int y = (Character.getNumericValue(userInput.charAt(1))-8) * -1;
             // Check if move is valid
@@ -206,7 +210,6 @@ public class Othello {
             } else {
                 System.out.println("Invalid move");
             }
-            
         }
         return;
     }
