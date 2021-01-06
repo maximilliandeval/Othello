@@ -201,11 +201,52 @@ public class Othello {
             encounteredOpponent = false;
 
             // Check above-right diagonal
+            for (int iy = y, ix = x; iy >= 0 && ix < 8; ix++, iy--) {
+                if (ix!=x && board[iy][ix]==' ') {
+                    break;
+                } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                    for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
+                        board[jy][jx] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
 
             // Check below-left diagonal
+            for (int iy = y, ix = x; iy < 8 && ix >= 0; ix--, iy++) {
+                if (ix!=x && board[iy][ix]==' ') {
+                    break;
+                } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                    for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
+                        board[jy][jx] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
 
             // Check below-right diagonal
-
+            for (int iy = y, ix = x; iy < 8 && ix < 8; ix++, iy++) {
+                if (ix!=x && board[iy][ix]==' ') {
+                    break;
+                } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                    for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
+                        board[jy][jx] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
 
             // Check if a move was performed:
             if (madeChanges) {
