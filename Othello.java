@@ -20,9 +20,12 @@ public class Othello {
         board[width/2][(width/2)-1] = 'O';
         board[width/2][width/2] = 'X';
 
-        /* char[] fullLine = new char[] {'F','U','L','L','L','I','N','E','9','1'};
-        board[0] = fullLine;
-        board[3] = fullLine; */
+        /* char[] fullLine10 = new char[] {'F','U','L','L','L','I','N','E','9','1'};
+        board[0] = fullLine10;
+        board[3] = fullLine10; */
+
+        // char[] fullLine4 = new char[] {'F','U','L','L'};
+        // board[0] = fullLine4;
 
         gameLoop(board);
         scannerObj.close();
@@ -114,7 +117,7 @@ public class Othello {
         int width = board.length;
         for (int y = 0; y < width; y++) {
             for (int x = 0; x < width; x++) {
-                if (!performMove(board, player, x, y)) {
+                if (performMove(board, player, x, y, false)) {
                     return true;
                 }
             }
@@ -123,7 +126,7 @@ public class Othello {
     }
 
     // Return true if the move is valid.  Return false if it is invalid
-    public static boolean performMove(char[][] board, int player, int x, int y) {
+    public static boolean performMove(char[][] board, int player, int x, int y, boolean updateBoard) {
         char desiredChar;
         if (player == 1) {
             desiredChar = 'X';
@@ -152,8 +155,10 @@ public class Othello {
                 } else if (i==(y-1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j <= y; j++) {
-                        board[j][x] = desiredChar;
+                    if (updateBoard) {
+                        for (int j = i; j <= y; j++) {
+                            board[j][x] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -168,8 +173,10 @@ public class Othello {
                 } else if (i==(y+1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j >= y; j--) {
-                        board[j][x] = desiredChar;
+                    if (updateBoard) {
+                        for (int j = i; j >= y; j--) {
+                            board[j][x] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -184,8 +191,10 @@ public class Othello {
                 } else if (i==(x+1) && board[y][i] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j >= x; j--) {
-                        board[y][j] = desiredChar;
+                    if (updateBoard) {
+                        for (int j = i; j >= x; j--) {
+                            board[y][j] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -200,8 +209,10 @@ public class Othello {
                 } else if (i==(x-1) && board[y][i] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j <= x; j++) {
-                        board[y][j] = desiredChar;
+                    if (updateBoard) {
+                        for (int j = i; j <= x; j++) {
+                            board[y][j] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -216,8 +227,10 @@ public class Othello {
                 } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
-                        board[jy][jx] = desiredChar;
+                    if (updateBoard) {
+                        for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
+                            board[jy][jx] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -232,8 +245,10 @@ public class Othello {
                 } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
-                        board[jy][jx] = desiredChar;
+                    if (updateBoard) {
+                        for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
+                            board[jy][jx] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -248,8 +263,10 @@ public class Othello {
                 } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
-                        board[jy][jx] = desiredChar;
+                    if (updateBoard) {
+                        for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
+                            board[jy][jx] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -264,8 +281,10 @@ public class Othello {
                 } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
-                        board[jy][jx] = desiredChar;
+                    if (updateBoard) {
+                        for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
+                            board[jy][jx] = desiredChar;
+                        }
                     }
                     madeChanges = true;
                     break;
@@ -309,7 +328,7 @@ public class Othello {
             System.out.println();
             // Print the row labels
             System.out.print(Integer.toString(width-y) + " ");
-            if (width-y < 10) {
+            if (width>=10 && (width-y)<10) {
                 System.out.print(" ");
             }
             for (int x = 0; x < width; x++) {
@@ -332,7 +351,7 @@ public class Othello {
             int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65)
             int y = (Character.getNumericValue(userInput.charAt(1))-board.length) * -1;
             // Check if move is valid
-            if (performMove(board, player, x, y)) {
+            if (performMove(board, player, x, y, true)) {
                 break;
             } else {
                 System.out.println("Invalid move");
@@ -362,6 +381,7 @@ public class Othello {
 
         // It is possible for a game to end before all squares on the board have filled
         if (!hasPossibleMoves(board, 1) && !hasPossibleMoves(board, 2) ) {
+            displayScore(board);
             System.out.println("Neither player has any possible moves");
             System.out.println("GAME OVER");
             return true;
