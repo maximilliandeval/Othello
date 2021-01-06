@@ -71,7 +71,7 @@ public class Othello {
                 if (board[y][x] == 'X') {
                     p1Counter++;
                 } else if (board[y][x] == 'O') {
-                    p1Counter++;
+                    p2Counter++;
                 }
             }
         }
@@ -119,12 +119,12 @@ public class Othello {
 
             boolean madeChanges = false;
 
-            // Check above
+            // Check above specified coordinates
             boolean encounteredOpponent = false;
             for (int i = y; i >= 0; i--) {
                 if (i!=y && board[i][x]==' ') {
                     break;
-                } else if (i==(y+1) && board[i][x] != desiredChar) {
+                } else if (i==(y-1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
                     for (int j = i; j <= y; j++) {
@@ -150,10 +150,62 @@ public class Othello {
                     break;
                 }
             }
-
-            // Check left
+            encounteredOpponent = false;
 
             // Check right
+            for (int i = x; i < 8; i++) {
+                if (i!=x && board[y][i]==' ') {
+                    break;
+                } else if (i==(x+1) && board[y][i] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[y][i]==desiredChar && encounteredOpponent) {
+                    for (int j = i; j >= x; j--) {
+                        board[y][j] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
+
+            // Check left
+            for (int i = x; i >= 0; i--) {
+                if (i!=x && board[y][i]==' ') {
+                    break;
+                } else if (i==(x-1) && board[y][i] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[y][i]==desiredChar && encounteredOpponent) {
+                    for (int j = i; j <= x; j++) {
+                        board[y][j] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
+
+            // Check above-left diagonal
+            for (int iy = y, ix = x; iy >= 0 && ix >= 0; ix--, iy--) {
+                if (ix!=x && board[iy][ix]==' ') {
+                    break;
+                } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
+                    encounteredOpponent = true;
+                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                    for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
+                        board[jy][jx] = desiredChar;
+                    }
+                    madeChanges = true;
+                    break;
+                }
+            }
+            encounteredOpponent = false;
+
+            // Check above-right diagonal
+
+            // Check below-left diagonal
+
+            // Check below-right diagonal
+
 
             // Check if a move was performed:
             if (madeChanges) {
