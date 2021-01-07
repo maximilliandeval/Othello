@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.ArrayList;
 
 public class Othello {
     // "Do not create multiple buffered wrappers on a single InputStream":
@@ -114,15 +115,27 @@ public class Othello {
 
     // Checks if the given user has any possible valid moves
     public static boolean hasPossibleMoves(char[][] board, int player) {
+        ArrayList<String> possibleMoves = new ArrayList<String>();
         int width = board.length;
+        boolean hasMove = false;
         for (int y = 0; y < width; y++) {
             for (int x = 0; x < width; x++) {
                 if (performMove(board, player, x, y, false)) {
-                    return true;
+                    // (ASCII value for 'A' is 65)
+                    char column = (char) (65 + x);
+                    String row = Integer.toString(width-y);
+                    String combined = "" + column + row;
+                    possibleMoves.add(combined);
+                    hasMove = true;
                 }
             }
         }
-        return false;
+        System.out.println("Possible moves: " + possibleMoves.toString());
+        if (hasMove) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Return true if the move is valid.  Return false if it is invalid
