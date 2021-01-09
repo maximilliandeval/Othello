@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Othello {
     // "Do not create multiple buffered wrappers on a single InputStream":
@@ -7,6 +8,7 @@ public class Othello {
 
     public static void main(String[] args) {
         int width = promptWidth();
+        int numHumans = promptParticipants();
         char[][] board = new char[width][width];
 
         // Initialize all cells to ' '
@@ -28,7 +30,7 @@ public class Othello {
         // char[] fullLine4 = new char[] {'F','U','L','L'};
         // board[0] = fullLine4;
 
-        gameLoop(board);
+        gameLoop(board, numHumans);
         scannerObj.close();
         return;
     }
@@ -53,19 +55,34 @@ public class Othello {
     }
 
     // CENTRAL WHILE LOOP
-    public static void gameLoop(char[][] board) {
+    public static void gameLoop(char[][] board, int numHumans) {
         boolean finished = false;
         // Player 1 is represented by X on the board
         // Player 2 is represented by O on the board
         int player = 1;
+        String[] participants;
+        if (numHumans==2) {
+            participants = new String[] {"Human", "Human"};
+        } else if (numHumans==1) {
+            participants = new String[] {"Human", "AI"};
+        } else {
+            participants = new String[] {"AI", "AI"};
+        }
         while (finished == false) {
             displayBoard(board);
             System.out.println("");
             displayScore(board);
             System.out.println("");
             System.out.println("PLAYER " + player + "'S TURN");
-            if (hasPossibleMoves(board, player)) {
-                promptPlayerMove(board, player);
+            if ((hasPossibleMoves(board, player).length) !=0 ) {
+                if (participants[player-1].equals("Human")) {
+                    promptPlayerMove(board, player);
+                } else {
+                    // minimiax AI implementation
+                    //minimax(currentPosition, 3, -∞, +∞, true);
+                    int relativeInfinity = board.length * board.length + 1;
+                    minimax(board, 3, (-1 * relativeInfinity), relativeInfinity, true, player);
+                }
             } else {
                 System.out.println("Current player does not have any valid possible moves.  Skipping turn...");
             }
@@ -84,6 +101,73 @@ public class Othello {
             System.out.println("The game is a tie!");
         }
         return;
+    }
+
+    public static int minimax(char[][] board, int depth, int alpha, int beta, boolean maximizingPlayer, int currentPlayer) {
+        String[] possibleMoves = hasPossibleMoves(board, currentPlayer);
+        // Base case
+        // if depth == 0 or game over in position
+        if (depth==0 || possibleMoves.length==0) {
+            //return static evaluation of position
+            return 1;
+        }
+        // Recursive cases
+        if (maximizingPlayer) {
+            int maxEval = -1 * (board.length * board.length + 1);
+            for (String move: possibleMoves) {
+                // Clone 2D array
+                char[][] boardCopy = Arrays.stream(board).map(char[]::clone).toArray(char[][]::new);
+                int x = move.charAt(0)-65; // (ASCII value for 'A' is 65)
+                int y = Character.getNumericValue(move.charAt(1));
+                int moveScore = performMove(boardCopy, currentPlayer, x, y, true);
+                int eval = minimax(boardCopy, depth-1, alpha, beta, false, currentPlayer);
+                maxEval = Math.max(maxEval, eval);
+                alpha = Math.max(alpha, eval);
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+            return maxEval;
+
+        } else {
+            int minEval = board.length * board.length + 1; // minEval = +infinity
+            for (String move : possibleMoves) {
+                // Clone 2D array
+                char[][] boardCopy = Arrays.stream(board).map(char[]::clone).toArray(char[][]::new);
+                int x = move.charAt(0)-65; // (ASCII value for 'A' is 65)
+                int y = Character.getNumericValue(move.charAt(1));
+                int moveScore = performMove(boardCopy, currentPlayer, x, y, false);
+                int eval = minimax(boardCopy, depth - 1, alpha, beta, true, currentPlayer);
+                minEval = Math.min(minEval, eval);
+                beta = Math.min(beta, eval);
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+            return minEval;
+        }
+    }
+
+    // Ask the user how many human players will be participating in the game
+    public static int promptParticipants() {
+        System.out.println("How many human players will be participating in the game?");
+        System.out.println("0 humans (2 AI bots)");
+        System.out.println("1 humans (1 AI bot)");
+        System.out.println("2 humans (0 AI bots)");
+        while (true) {
+            System.out.print("Please select 0, 1, or 2: ");
+            String input = scannerObj.nextLine();
+            System.out.println();
+            if (input.equals("0")) {
+                return 0;
+            } else if (input.equals("1")) {
+                return 1;
+            } else if (input.equals("2")) {
+                return 2;
+            } else {
+                System.out.println("Invalid input");
+            }
+        }
     }
 
     // Display score
@@ -113,33 +197,29 @@ public class Othello {
         }
     }
 
-    // Checks if the given user has any possible valid moves
-    public static boolean hasPossibleMoves(char[][] board, int player) {
+    // Returns an array of strings indicating the user's possible moves
+    // If an emptry string is returned, it means that the user does not have any possible moves
+    public static String[] hasPossibleMoves(char[][] board, int player) {
         ArrayList<String> possibleMoves = new ArrayList<String>();
         int width = board.length;
-        boolean hasMove = false;
         for (int y = 0; y < width; y++) {
             for (int x = 0; x < width; x++) {
-                if (performMove(board, player, x, y, false)) {
+                if (performMove(board, player, x, y, false) != 0) {
                     // (ASCII value for 'A' is 65)
                     char column = (char) (65 + x);
                     String row = Integer.toString(width-y);
                     String combined = "" + column + row;
                     possibleMoves.add(combined);
-                    hasMove = true;
                 }
             }
         }
         System.out.println("Possible moves: " + possibleMoves.toString());
-        if (hasMove) {
-            return true;
-        } else {
-            return false;
-        }
+        // Convert arraylist to array
+        return possibleMoves.toArray(new String[possibleMoves.size()]);
     }
 
     // Return true if the move is valid.  Return false if it is invalid
-    public static boolean performMove(char[][] board, int player, int x, int y, boolean updateBoard) {
+    public static int performMove(char[][] board, int player, int x, int y, boolean updateBoard) {
         char desiredChar;
         if (player == 1) {
             desiredChar = 'X';
@@ -150,7 +230,7 @@ public class Othello {
 
         try {
             if (board[y][x] != ' ') {
-                return false;
+                return 0;
             }
 
             /* According to the official rules of the board game:
@@ -158,7 +238,7 @@ public class Othello {
             an opposing disk."
             As such I will ___________ */
 
-            boolean madeChanges = false;
+            int scoreTracker = 0;
 
             // Check above specified coordinates
             boolean encounteredOpponent = false;
@@ -168,12 +248,13 @@ public class Othello {
                 } else if (i==(y-1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int j = i; j <= y; j++) {
+                    for (int j = i; j <= y; j++) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[j][x] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -186,12 +267,13 @@ public class Othello {
                 } else if (i==(y+1) && board[i][x] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int j = i; j >= y; j--) {
+                    for (int j = i; j >= y; j--) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[j][x] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -204,12 +286,13 @@ public class Othello {
                 } else if (i==(x+1) && board[y][i] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int j = i; j >= x; j--) {
+                    for (int j = i; j >= x; j--) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[y][j] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -222,12 +305,13 @@ public class Othello {
                 } else if (i==(x-1) && board[y][i] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int j = i; j <= x; j++) {
+                    for (int j = i; j <= x; j++) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[y][j] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -240,12 +324,13 @@ public class Othello {
                 } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
+                    for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[jy][jx] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -258,12 +343,13 @@ public class Othello {
                 } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
+                    for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[jy][jx] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -276,12 +362,13 @@ public class Othello {
                 } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
+                    for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[jy][jx] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
@@ -294,23 +381,19 @@ public class Othello {
                 } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
                     encounteredOpponent = true;
                 } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    if (updateBoard) {
-                        for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
+                    for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
+                        scoreTracker++;
+                        if (updateBoard) {
                             board[jy][jx] = desiredChar;
                         }
                     }
-                    madeChanges = true;
+                    scoreTracker--;
                     break;
                 }
             }
             encounteredOpponent = false;
 
-            // Check if a move was performed:
-            if (madeChanges) {
-                return true;
-            } else {
-                return false;
-            }
+            return scoreTracker;
         
         } catch (ArrayIndexOutOfBoundsException e) {
             // (ASCII value for 'A' is 65)
@@ -318,7 +401,7 @@ public class Othello {
             System.out.println("The first value must be a letter from A-" + finalLetter);
             System.out.println("The second value must be an integer from 1-" + width);
             System.out.println("Please try again...");
-            return false;
+            return 0;
         }
     }
 
@@ -364,7 +447,7 @@ public class Othello {
             int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65)
             int y = (Character.getNumericValue(userInput.charAt(1))-board.length) * -1;
             // Check if move is valid
-            if (performMove(board, player, x, y, true)) {
+            if (performMove(board, player, x, y, true) != 0) {
                 break;
             } else {
                 System.out.println("Invalid move");
@@ -393,7 +476,7 @@ public class Othello {
         }  else */
 
         // It is possible for a game to end before all squares on the board have filled
-        if (!hasPossibleMoves(board, 1) && !hasPossibleMoves(board, 2) ) {
+        if ((hasPossibleMoves(board, 1).length==0) && (hasPossibleMoves(board, 2).length==0)) {
             displayScore(board);
             System.out.println("Neither player has any possible moves");
             System.out.println("GAME OVER");
