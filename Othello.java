@@ -1,6 +1,7 @@
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 public class Othello {
     static int MaxDepth;
@@ -101,6 +102,7 @@ public class Othello {
                 if (participants[player-1].equals("Human")) {
                     promptPlayerMove(board, player); // Performs move as well
                 } else {
+                    pause(board.length);
                     // Get best move using minimax helper function
                     String bestMove = getBestMove(board, player, MaxDepth);
                     int x = bestMove.charAt(0)-65; // (ASCII value for 'A' is 65)
@@ -114,15 +116,6 @@ public class Othello {
             player = (player % 2) + 1;
             System.out.println("");
             finished = isGameOver(board);
-        }
-
-        int[] finalScores = getScores(board);
-        if (finalScores[0] > finalScores[1]) {
-            System.out.println("Player 1 is the winner!");
-        } else if (finalScores[1] > finalScores[0]) {
-            System.out.println("Player 2 is the winner!");
-        } else {
-            System.out.println("The game is a tie!");
         }
         return;
     }
@@ -141,8 +134,27 @@ public class Othello {
         return bestMove;
     }
 
+    // Temporarily pause the program so that the player can see what the board looks like
+    // before the AI plays their move
+    public static void pause(int width) {
+        try {
+            if (width >= 10) {
+                width = width + 1;
+            }
+            width = width*2 + 2;
+            int totalPauseTimeMS = 3000;
+            for (int i = 0; i < width; i++) {
+                TimeUnit.MILLISECONDS.sleep(totalPauseTimeMS/width);
+                System.out.print("-");
+            }
+            System.out.println("");
+        } catch (InterruptedException e) {
+            // If this function somehow fails, it is not a huge issue because the user
+            // can just scroll up
+        }
+    }
+
     public static int minimax(char[][] board, int depth, int alpha, int beta, boolean maximizingPlayer, int currentPlayer) {
-        System.out.println("ITERATION");
         String[] possibleMovesAI = hasPossibleMoves(board, currentPlayer);
         String[] possibleMovesOpponent = hasPossibleMoves(board, ((currentPlayer%2)+1));
         // BASE CASE
@@ -161,8 +173,6 @@ public class Othello {
                 char[][] boardCopy = Arrays.stream(board).map(char[]::clone).toArray(char[][]::new);
                 int x = move.charAt(0)-65; // (ASCII value for 'A' is 65)
                 int y = (Character.getNumericValue(move.charAt(1))-board.length) * -1;
-                System.out.println(x);
-                System.out.println(y);
                 performMove(boardCopy, currentPlayer, x, y, true);
                 int eval = minimax(boardCopy, depth-1, alpha, beta, false, currentPlayer);
                 maxEval = Math.max(maxEval, eval);
@@ -250,7 +260,7 @@ public class Othello {
                 }
             }
         }
-        System.out.println("Possible moves: " + possibleMoves.toString());
+        //System.out.println("Possible moves: " + possibleMoves.toString());
         // Convert arraylist to array
         return possibleMoves.toArray(new String[possibleMoves.size()]);
     }
@@ -514,6 +524,10 @@ public class Othello {
 
         // It is possible for a game to end before all squares on the board have filled
         if ((hasPossibleMoves(board, 1).length==0) && (hasPossibleMoves(board, 2).length==0)) {
+            displayBoard(board);
+            System.out.println();
+            System.out.println("Neither player has any possible moves...");
+            System.out.println("GAME OVER");
             int[] finalScores = getScores(board);
             if (finalScores[0] > finalScores[1]) {
                 System.out.println("Player 1 is the winner!");
@@ -522,8 +536,6 @@ public class Othello {
             } else {
                 System.out.println("The game is a tie!");
             }
-            System.out.println("Neither player has any possible moves");
-            System.out.println("GAME OVER");
             return true;
         } else {
             return false;
