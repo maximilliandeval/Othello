@@ -11,7 +11,7 @@ public class Othello {
     public static void main(String[] args) {
         int width = promptWidth();
         int numHumans = promptParticipants();
-        MaxDepth = promptDepth();
+        MaxDepth = promptDepth(width);
         char[][] board = new char[width][width];
 
         // Initialize all cells to ' '
@@ -39,38 +39,43 @@ public class Othello {
     }
 
     public static int promptWidth() {
-        System.out.println("Width of board?");
-        System.out.println("Specify an even integer from 4-26)");
+        System.out.println();
+        System.out.println("Traditionally, Othello is played on an 8x8 board.");
+        System.out.println("What size do you want the side of the square board to be?");
+        System.out.print("Specify an even integer from 4-26: ");
         int width = 0;
         while (true) {
             try {
                 width = Integer.parseInt(ScannerObj.nextLine());
                 if (width>=4 && width<=26 && (width%2)==0) {
+                    System.out.println();
                     return width;
                 } else {
-                    System.out.println("Invalid width. Please try again: ");
+                    System.out.print("Invalid input. Please try again: ");
                 }
             } catch (Exception e) {
-                System.out.println("Invalid width. Please try again: ");
+                System.out.print("Invalid input. Please try again: ");
                 continue;
             }
         }
     }
 
-    public static int promptDepth() {
+    public static int promptDepth(int width) {
         System.out.println("How many moves ahead would you like the AI to consider?");
-        System.out.println("Please enter an integer from 1-10:");
+        int totalLevels = width * width - 4;
+        System.out.print("Please enter an integer from 1-" + totalLevels + ": ");
         int input = 0;
         while (true) {
             try {
                 input = Integer.parseInt(ScannerObj.nextLine());
-                if (input>=0) {
+                if (input>=0 && input<=totalLevels) {
+                    System.out.println();
                     return input;
                 } else {
-                    System.out.println("Invalid input. Please try again: ");
+                    System.out.print("Invalid input. Please try again: ");
                 }
             } catch (Exception e) {
-                System.out.println("Invalid input. Please try again: ");
+                System.out.print("Invalid input. Please try again: ");
                 continue;
             }
         }
@@ -78,6 +83,7 @@ public class Othello {
 
     // CENTRAL WHILE LOOP
     public static void gameLoop(char[][] board, int numHumans) {
+
         boolean finished = false;
         // Player 1 is represented by X on the board
         // Player 2 is represented by O on the board
@@ -91,13 +97,15 @@ public class Othello {
             participants = new String[] {"AI", "AI"};
         }
         while (finished == false) {
+            System.out.println("PLAYER " + player + "'S TURN:");
+            System.out.println();
             displayBoard(board);
-            System.out.println("");
+            System.out.println();
             int[] scores = getScores(board);
             System.out.println("Player 1 score: " + scores[0]);
             System.out.println("Player 2 score: " + scores[1]); 
-            System.out.println("");
-            System.out.println("PLAYER " + player + "'S TURN");
+            System.out.println();
+            
             if ((hasPossibleMoves(board, player).length) !=0 ) {
                 if (participants[player-1].equals("Human")) {
                     promptPlayerMove(board, player); // Performs move as well
@@ -144,7 +152,7 @@ public class Othello {
             width = width*2 + 2;
             int totalPauseTimeMS = 3000;
             for (int i = 0; i < width; i++) {
-                TimeUnit.MILLISECONDS.sleep(totalPauseTimeMS/width);
+                TimeUnit.MILLISECONDS.sleep(totalPauseTimeMS/width); // totalPauseTimeMS/width
                 System.out.print("-");
             }
             System.out.println("");
@@ -205,9 +213,9 @@ public class Othello {
     // Ask the user how many human players will be participating in the game
     public static int promptParticipants() {
         System.out.println("How many human players will be participating in the game?");
-        System.out.println("0 humans (2 AI bots)");
-        System.out.println("1 humans (1 AI bot)");
-        System.out.println("2 humans (0 AI bots)");
+        System.out.println("  - 0 humans (2 AI bots)");
+        System.out.println("  - 1 humans (1 AI bot)");
+        System.out.println("  - 2 humans (0 AI bots)");
         while (true) {
             System.out.print("Please select 0, 1, or 2: ");
             String input = ScannerObj.nextLine();
