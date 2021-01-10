@@ -3,12 +3,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Othello {
+    static int MaxDepth;
     // "Do not create multiple buffered wrappers on a single InputStream":
-    static Scanner scannerObj = new Scanner(System.in);
+    static Scanner ScannerObj = new Scanner(System.in);
 
     public static void main(String[] args) {
         int width = promptWidth();
         int numHumans = promptParticipants();
+        MaxDepth = promptDepth();
         char[][] board = new char[width][width];
 
         // Initialize all cells to ' '
@@ -31,7 +33,7 @@ public class Othello {
         // board[0] = fullLine4;
 
         gameLoop(board, numHumans);
-        scannerObj.close();
+        ScannerObj.close();
         return;
     }
 
@@ -41,7 +43,7 @@ public class Othello {
         int width = 0;
         while (true) {
             try {
-                width = Integer.parseInt(scannerObj.nextLine());
+                width = Integer.parseInt(ScannerObj.nextLine());
                 if (width>=4 && width<=26 && (width%2)==0) {
                     return width;
                 } else {
@@ -49,6 +51,25 @@ public class Othello {
                 }
             } catch (Exception e) {
                 System.out.println("Invalid width. Please try again: ");
+                continue;
+            }
+        }
+    }
+
+    public static int promptDepth() {
+        System.out.println("How many moves ahead would you like the AI to consider?");
+        System.out.println("Please enter an integer from 1-10:");
+        int input = 0;
+        while (true) {
+            try {
+                input = Integer.parseInt(ScannerObj.nextLine());
+                if (input>=0) {
+                    return input;
+                } else {
+                    System.out.println("Invalid input. Please try again: ");
+                }
+            } catch (Exception e) {
+                System.out.println("Invalid input. Please try again: ");
                 continue;
             }
         }
@@ -71,17 +92,20 @@ public class Othello {
         while (finished == false) {
             displayBoard(board);
             System.out.println("");
-            displayScore(board);
+            int[] scores = getScores(board);
+            System.out.println("Player 1 score: " + scores[0]);
+            System.out.println("Player 2 score: " + scores[1]); 
             System.out.println("");
             System.out.println("PLAYER " + player + "'S TURN");
             if ((hasPossibleMoves(board, player).length) !=0 ) {
                 if (participants[player-1].equals("Human")) {
-                    promptPlayerMove(board, player);
+                    promptPlayerMove(board, player); // Performs move as well
                 } else {
-                    // minimiax AI implementation
-                    //minimax(currentPosition, 3, -∞, +∞, true);
-                    int relativeInfinity = board.length * board.length + 1;
-                    minimax(board, 3, (-1 * relativeInfinity), relativeInfinity, true, player);
+                    // Get best move using minimax helper function
+                    String bestMove = getBestMove(board, player, MaxDepth);
+                    int x = bestMove.charAt(0)-65; // (ASCII value for 'A' is 65)
+                    int y = (Character.getNumericValue(bestMove.charAt(1))-board.length) * -1;
+                    performMove(board, player, x, y, true);
                 }
             } else {
                 System.out.println("Current player does not have any valid possible moves.  Skipping turn...");
@@ -92,10 +116,10 @@ public class Othello {
             finished = isGameOver(board);
         }
 
-        int winner = displayScore(board);
-        if (winner == 1) {
+        int[] finalScores = getScores(board);
+        if (finalScores[0] > finalScores[1]) {
             System.out.println("Player 1 is the winner!");
-        } else if (winner == 2) {
+        } else if (finalScores[1] > finalScores[0]) {
             System.out.println("Player 2 is the winner!");
         } else {
             System.out.println("The game is a tie!");
@@ -103,23 +127,43 @@ public class Othello {
         return;
     }
 
-    public static int minimax(char[][] board, int depth, int alpha, int beta, boolean maximizingPlayer, int currentPlayer) {
+    public static String getBestMove(char[][] board, int currentPlayer, int depth) {
         String[] possibleMoves = hasPossibleMoves(board, currentPlayer);
-        // Base case
-        // if depth == 0 or game over in position
-        if (depth==0 || possibleMoves.length==0) {
-            //return static evaluation of position
-            return 1;
+        int maxScore = -1 * (board.length * board.length + 1); // int maxMove = -infinity
+        String bestMove = "";
+        for (String move : possibleMoves) {
+            int resultingMoveScore = minimax(board, depth, maxScore, (-1 * maxScore), true, currentPlayer);
+            if (resultingMoveScore > maxScore) {
+                maxScore = resultingMoveScore;
+                bestMove = move;
+            }
         }
-        // Recursive cases
+        return bestMove;
+    }
+
+    public static int minimax(char[][] board, int depth, int alpha, int beta, boolean maximizingPlayer, int currentPlayer) {
+        System.out.println("ITERATION");
+        String[] possibleMovesAI = hasPossibleMoves(board, currentPlayer);
+        String[] possibleMovesOpponent = hasPossibleMoves(board, ((currentPlayer%2)+1));
+        // BASE CASE
+        // if depth==0 or game over in position
+        if (depth==0 || (maximizingPlayer && possibleMovesAI.length==0) || (!maximizingPlayer && possibleMovesOpponent.length==0)) {
+            //return static evaluation of position
+            return getScores(board)[currentPlayer-1];
+        }
+
+        // RECURSIVE CASES
+        // AI's turn:
         if (maximizingPlayer) {
             int maxEval = -1 * (board.length * board.length + 1);
-            for (String move: possibleMoves) {
+            for (String move: possibleMovesAI) {
                 // Clone 2D array
                 char[][] boardCopy = Arrays.stream(board).map(char[]::clone).toArray(char[][]::new);
                 int x = move.charAt(0)-65; // (ASCII value for 'A' is 65)
-                int y = Character.getNumericValue(move.charAt(1));
-                int moveScore = performMove(boardCopy, currentPlayer, x, y, true);
+                int y = (Character.getNumericValue(move.charAt(1))-board.length) * -1;
+                System.out.println(x);
+                System.out.println(y);
+                performMove(boardCopy, currentPlayer, x, y, true);
                 int eval = minimax(boardCopy, depth-1, alpha, beta, false, currentPlayer);
                 maxEval = Math.max(maxEval, eval);
                 alpha = Math.max(alpha, eval);
@@ -128,15 +172,15 @@ public class Othello {
                 }
             }
             return maxEval;
-
+        // Opponent's turn:
         } else {
             int minEval = board.length * board.length + 1; // minEval = +infinity
-            for (String move : possibleMoves) {
+            for (String move : possibleMovesOpponent) {
                 // Clone 2D array
                 char[][] boardCopy = Arrays.stream(board).map(char[]::clone).toArray(char[][]::new);
                 int x = move.charAt(0)-65; // (ASCII value for 'A' is 65)
-                int y = Character.getNumericValue(move.charAt(1));
-                int moveScore = performMove(boardCopy, currentPlayer, x, y, false);
+                int y = (Character.getNumericValue(move.charAt(1))-board.length) * -1;
+                performMove(boardCopy, currentPlayer, x, y, false);
                 int eval = minimax(boardCopy, depth - 1, alpha, beta, true, currentPlayer);
                 minEval = Math.min(minEval, eval);
                 beta = Math.min(beta, eval);
@@ -156,7 +200,7 @@ public class Othello {
         System.out.println("2 humans (0 AI bots)");
         while (true) {
             System.out.print("Please select 0, 1, or 2: ");
-            String input = scannerObj.nextLine();
+            String input = ScannerObj.nextLine();
             System.out.println();
             if (input.equals("0")) {
                 return 0;
@@ -171,9 +215,10 @@ public class Othello {
     }
 
     // Display score
-    // Returns an int indicating which player is currently leading
-    // (0 represents the score is tied)
-    public static int displayScore(char[][] board) {
+    // Returns an array of length 2 holding the participants scores
+    // idx 0: player 1's score
+    // idx 1: plauer 2's score
+    public static int[] getScores(char[][] board) {
         int p1Counter = 0;
         int p2Counter = 0;
         int width = board.length;
@@ -186,15 +231,7 @@ public class Othello {
                 }
             }
         }
-        System.out.println("Player 1 score: " + p1Counter);
-        System.out.println("Player 2 score: " + p2Counter); 
-        if (p1Counter > p2Counter) {
-            return 1;
-        } else if (p2Counter > p1Counter) {
-            return 2;
-        } else {
-            return 0;
-        }
+        return new int[] {p1Counter, p2Counter};
     }
 
     // Returns an array of strings indicating the user's possible moves
@@ -228,181 +265,171 @@ public class Othello {
         }
         int width = board.length;
 
-        try {
-            if (board[y][x] != ' ') {
-                return 0;
-            }
-
-            /* According to the official rules of the board game:
-            "You may not skip over your own color disk to outflank
-            an opposing disk."
-            As such I will ___________ */
-
-            int scoreTracker = 0;
-
-            // Check above specified coordinates
-            boolean encounteredOpponent = false;
-            for (int i = y; i >= 0; i--) {
-                if (i!=y && board[i][x]==' ') {
-                    break;
-                } else if (i==(y-1) && board[i][x] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j <= y; j++) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[j][x] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check below
-            for (int i = y; i < width; i++) {
-                if (i!=y && board[i][x]==' ') {
-                    break;
-                } else if (i==(y+1) && board[i][x] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[i][x]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j >= y; j--) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[j][x] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check right
-            for (int i = x; i < width; i++) {
-                if (i!=x && board[y][i]==' ') {
-                    break;
-                } else if (i==(x+1) && board[y][i] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j >= x; j--) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[y][j] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check left
-            for (int i = x; i >= 0; i--) {
-                if (i!=x && board[y][i]==' ') {
-                    break;
-                } else if (i==(x-1) && board[y][i] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[y][i]==desiredChar && encounteredOpponent) {
-                    for (int j = i; j <= x; j++) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[y][j] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check above-left diagonal
-            for (int iy = y, ix = x; iy >= 0 && ix >= 0; ix--, iy--) {
-                if (ix!=x && board[iy][ix]==' ') {
-                    break;
-                } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[jy][jx] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check above-right diagonal
-            for (int iy = y, ix = x; iy >= 0 && ix < width; ix++, iy--) {
-                if (ix!=x && board[iy][ix]==' ') {
-                    break;
-                } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[jy][jx] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check below-left diagonal
-            for (int iy = y, ix = x; iy < width && ix >= 0; ix--, iy++) {
-                if (ix!=x && board[iy][ix]==' ') {
-                    break;
-                } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[jy][jx] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            // Check below-right diagonal
-            for (int iy = y, ix = x; iy < width && ix < width; ix++, iy++) {
-                if (ix!=x && board[iy][ix]==' ') {
-                    break;
-                } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
-                    encounteredOpponent = true;
-                } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
-                    for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
-                        scoreTracker++;
-                        if (updateBoard) {
-                            board[jy][jx] = desiredChar;
-                        }
-                    }
-                    scoreTracker--;
-                    break;
-                }
-            }
-            encounteredOpponent = false;
-
-            return scoreTracker;
-        
-        } catch (ArrayIndexOutOfBoundsException e) {
-            // (ASCII value for 'A' is 65)
-            char finalLetter = (char) (width + 64);
-            System.out.println("The first value must be a letter from A-" + finalLetter);
-            System.out.println("The second value must be an integer from 1-" + width);
-            System.out.println("Please try again...");
+        if (board[y][x] != ' ') {
             return 0;
         }
+
+        /* According to the official rules of the board game:
+        "You may not skip over your own color disk to outflank
+        an opposing disk."
+        As such I will ___________ */
+
+        int scoreTracker = 0;
+
+        // Check above specified coordinates
+        boolean encounteredOpponent = false;
+        for (int i = y; i >= 0; i--) {
+            if (i!=y && board[i][x]==' ') {
+                break;
+            } else if (i==(y-1) && board[i][x] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[i][x]==desiredChar && encounteredOpponent) {
+                for (int j = i; j <= y; j++) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[j][x] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check below
+        for (int i = y; i < width; i++) {
+            if (i!=y && board[i][x]==' ') {
+                break;
+            } else if (i==(y+1) && board[i][x] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[i][x]==desiredChar && encounteredOpponent) {
+                for (int j = i; j >= y; j--) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[j][x] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check right
+        for (int i = x; i < width; i++) {
+            if (i!=x && board[y][i]==' ') {
+                break;
+            } else if (i==(x+1) && board[y][i] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[y][i]==desiredChar && encounteredOpponent) {
+                for (int j = i; j >= x; j--) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[y][j] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check left
+        for (int i = x; i >= 0; i--) {
+            if (i!=x && board[y][i]==' ') {
+                break;
+            } else if (i==(x-1) && board[y][i] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[y][i]==desiredChar && encounteredOpponent) {
+                for (int j = i; j <= x; j++) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[y][j] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check above-left diagonal
+        for (int iy = y, ix = x; iy >= 0 && ix >= 0; ix--, iy--) {
+            if (ix!=x && board[iy][ix]==' ') {
+                break;
+            } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                for (int jy = iy, jx = ix; jx <= x && jy <= y; jy++, jx++) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[jy][jx] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check above-right diagonal
+        for (int iy = y, ix = x; iy >= 0 && ix < width; ix++, iy--) {
+            if (ix!=x && board[iy][ix]==' ') {
+                break;
+            } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                for (int jy = iy, jx = ix; jx >= x && jy <= y; jy++, jx--) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[jy][jx] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check below-left diagonal
+        for (int iy = y, ix = x; iy < width && ix >= 0; ix--, iy++) {
+            if (ix!=x && board[iy][ix]==' ') {
+                break;
+            } else if (ix==(x-1) && board[iy][ix] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                for (int jy = iy, jx = ix; jx <= x && jy >= y; jy--, jx++) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[jy][jx] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        // Check below-right diagonal
+        for (int iy = y, ix = x; iy < width && ix < width; ix++, iy++) {
+            if (ix!=x && board[iy][ix]==' ') {
+                break;
+            } else if (ix==(x+1) && board[iy][ix] != desiredChar) {
+                encounteredOpponent = true;
+            } else if (board[iy][ix]==desiredChar && encounteredOpponent) {
+                for (int jy = iy, jx = ix; jx >= x && jy >= y; jy--, jx--) {
+                    scoreTracker++;
+                    if (updateBoard) {
+                        board[jy][jx] = desiredChar;
+                    }
+                }
+                scoreTracker--;
+                break;
+            }
+        }
+        encounteredOpponent = false;
+
+        return scoreTracker;
     }
 
     // 
@@ -436,21 +463,31 @@ public class Othello {
     }
 
     public static void promptPlayerMove(char[][] board, int player) {
+        int width = board.length;
         while (true) {
             // Get input from the user
             System.out.print("Move? ");
-            String userInput = scannerObj.nextLine();
+            String userInput = ScannerObj.nextLine();
             if (userInput.length() != 2) {
                 System.out.println("Your input must have a length of 2");
                 continue;
             }
-            int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65)
+            int x = Character.toUpperCase(userInput.charAt(0))-65; // (ASCII value for 'A' is 65
             int y = (Character.getNumericValue(userInput.charAt(1))-board.length) * -1;
-            // Check if move is valid
-            if (performMove(board, player, x, y, true) != 0) {
-                break;
+            // Check if input is valid
+            if ((0<=x && x<=width-1) && (0<=y && y<=width-1)) {
+                // Check if move is valid
+                if (performMove(board, player, x, y, true) != 0) {
+                    break;
+                } else {
+                    System.out.println("Invalid move");
+                }
             } else {
-                System.out.println("Invalid move");
+                // (ASCII value for 'A' is 65)
+                char finalLetter = (char) (width + 64);
+                System.out.println("The first value must be a letter from A-" + finalLetter);
+                System.out.println("The second value must be an integer from 1-" + width);
+                System.out.println("Please try again...");
             }
         }
         return;
@@ -477,7 +514,14 @@ public class Othello {
 
         // It is possible for a game to end before all squares on the board have filled
         if ((hasPossibleMoves(board, 1).length==0) && (hasPossibleMoves(board, 2).length==0)) {
-            displayScore(board);
+            int[] finalScores = getScores(board);
+            if (finalScores[0] > finalScores[1]) {
+                System.out.println("Player 1 is the winner!");
+            } else if (finalScores[1] > finalScores[0]) {
+                System.out.println("Player 2 is the winner!");
+            } else {
+                System.out.println("The game is a tie!");
+            }
             System.out.println("Neither player has any possible moves");
             System.out.println("GAME OVER");
             return true;
